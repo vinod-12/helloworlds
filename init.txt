@@ -1,1 +1,3 @@
 this is second file in git
+ adding lines in this as well assume it as code
+
