@@ -1,8 +1,59 @@
+#!/bin/bash
 
-This is the first file i created in git-1
-This is second lline added to file.txt
-This is third line added in git -3
-This is fourth line addded after ssh psswd change
-This is fivfth line added on april 17th
-This line is from feature branch1
-This is sixth line added
+usage() {
+  echo "Usage: $0 CHECKNAME PROFILE"
+  echo "Checks: infra, os, keys, vol"
+  echo "you might want to output stdout to a .tsv file"
+  exit 0
+}
+
+if [[ $1 == infra ]]; then
+	for region in $(aws ec2 describe-regions --output text | cut -f3)
+	do
+		aws ec2 describe-instances --output text --region $region --profile $2 --query 'Reservations[*].Instances[*].[InstanceId, InstanceType, State.Name, Placement.AvailabilityZone, PrivateIpAddress, PrivateDnsName, PublicIpAddress, PublicDnsName, [Tags[?Key==`purpose`].Value] [0][0], [Tags[?Key==`environment`].Value] [0][0], [Tags[?Key==`team`].Value] [0][0] ]'
+	done
+else
+	usage
+fi
+
+if [[ $1 == vol ]]; then
+	for region in $(aws ec2 describe-regions --output text | cut -f3)
+	do
+	   aws ec2 describe-volumes --region $region --output text --profile $2 --query 'Volumes[*].{ID:VolumeId,InstanceId:Attachments[0].InstanceId,AZ:AvailabilityZone,Size:Size}'
+	done
+else
+	usage
+
+fi
+
+if [[ $1 == os ]]; then
+for region in $(aws ec2 describe-regions --output text | cut -f3)
+	do
+	   aws ec2 describe-instances  --profile $2 --region $region --output text --query 'Reservations[*].Instances[*].[InstanceId,Platform]'
+	done
+else
+	usage
+
+fi
+
+if [[ $1 == key ]]; then
+for region in $(aws ec2 describe-regions --output text | cut -f3)
+	do
+		echo "Region:$region";aws ec2 describe-key-pairs --output text --region $region --profile $2
+	done
+else
+	usage
+
+fi
+
+if [[ ( $# == "--help") ||  $# == "-h" ]]
+	then
+		usage
+	exit 0
+fi
+
+if [  $# -le 1 ]
+	then
+		usage
+	exit 1
+fi
